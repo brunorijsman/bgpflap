@@ -121,3 +121,64 @@ func TestIPv4PrefixFromString(t *testing.T) {
 		t.Errorf("FromString(\"1.1.1.1/33\") returned %v, expected !nil", err)
 	}
 }
+
+func TestIPv4PrefixToString(t *testing.T) {
+	var prefix IPv4Prefix
+	err := prefix.FromString("1.2.3.0/24")
+	if err != nil {
+		t.Fatalf("FromString(\"1.2.3.0/24\") returned %v, expected nil", err)
+	}
+	str := prefix.ToString()
+	if str != "1.2.3.0/24" {
+		t.Errorf("ToString returned %v, expected \"1.2.3.0/24\"", str)
+	}
+}
+
+func TestIPv4PrefixEncode(t *testing.T) {
+	var prefix IPv4Prefix
+	err := prefix.FromString("0.0.0.0/0")
+	if err != nil {
+		t.Fatalf("FromString(\"0.0.0.0/0\") returned %v, expected nil", err)
+	}
+	buf := NewMsgBuffer()
+	prefix.Encode(buf)
+	if !reflect.DeepEqual(buf.Bytes(), []byte{0}) {
+		t.Errorf("Encode(\"0.0.0.0/0\") returned %v, expected [0]", buf.Bytes())
+	}
+	err = prefix.FromString("130.0.0.0/7")
+	if err != nil {
+		t.Fatalf("FromString(\"130.0.0.0/7\") returned %v, expected nil", err)
+	}
+	buf.Clear()
+	prefix.Encode(buf)
+	if !reflect.DeepEqual(buf.Bytes(), []byte{7, 130}) {
+		t.Errorf("Encode(\"130.0.0.0/7\") returned %v, expected [7 130]", buf.Bytes())
+	}
+	err = prefix.FromString("1.128.0.0/9")
+	if err != nil {
+		t.Fatalf("FromString(\"1.128.0.0/9\") returned %v, expected nil", err)
+	}
+	buf.Clear()
+	prefix.Encode(buf)
+	if !reflect.DeepEqual(buf.Bytes(), []byte{9, 1, 128}) {
+		t.Errorf("Encode(\"1.128.0.0/9\") returned %v, expected [9 1 128]", buf.Bytes())
+	}
+	err = prefix.FromString("1.2.3.0/24")
+	if err != nil {
+		t.Fatalf("FromString(\"1.2.3.0/24\") returned %v, expected nil", err)
+	}
+	buf.Clear()
+	prefix.Encode(buf)
+	if !reflect.DeepEqual(buf.Bytes(), []byte{24, 1, 2, 3}) {
+		t.Errorf("Encode(\"1.2.3.0/24\") returned %v, expected [24 1 2 3]", buf.Bytes())
+	}
+	err = prefix.FromString("255.255.255.255/32")
+	if err != nil {
+		t.Fatalf("FromString(\"255.255.255.255/32\") returned %v, expected nil", err)
+	}
+	buf.Clear()
+	prefix.Encode(buf)
+	if !reflect.DeepEqual(buf.Bytes(), []byte{32, 255, 255, 255, 255}) {
+		t.Errorf("Encode(\"255.255.255.255/32\") returned %v, expected [32 255 255 255 255]", buf.Bytes())
+	}
+}

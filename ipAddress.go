@@ -74,6 +74,15 @@ func (prefix *IPv4Prefix) FromString(s string) error {
 	return nil
 }
 
+// ToString converts an IPv4 prefix to a x.x.x.x/x string
+func (prefix *IPv4Prefix) ToString() string {
+	a := int((prefix.addr >> 24) & 0xff)
+	b := int((prefix.addr >> 16) & 0xff)
+	c := int((prefix.addr >> 8) & 0xff)
+	d := int(prefix.addr & 0xff)
+	return fmt.Sprintf("%d.%d.%d.%d/%d", a, b, c, d, prefix.len)
+}
+
 // Encode encodes an IPv4 prefix
 func (prefix *IPv4Prefix) Encode(buf *MsgBuffer) {
 	buf.AppendByte(prefix.len)

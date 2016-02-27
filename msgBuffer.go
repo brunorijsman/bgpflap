@@ -16,6 +16,11 @@ func NewMsgBuffer() *MsgBuffer {
 	return &msgBuffer
 }
 
+// Clear makes the buffer empty
+func (m *MsgBuffer) Clear() {
+	m.buffer.Reset()
+}
+
 // AppendByte appends a byte
 func (m *MsgBuffer) AppendByte(b byte) {
 	m.buffer.WriteByte(b)
