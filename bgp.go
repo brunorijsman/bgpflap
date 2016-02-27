@@ -43,9 +43,37 @@ func sendKeepAliveMsg(conn net.Conn) {
 	conn.Write(buf.Bytes())
 }
 
-func sendUpdateMsg(conn net.Conn) {
+func prefixStr(i int) string {
+	a := i / (256 * 256)
+	rest := i % (256 * 256)
+	b := rest / 256
+	c := rest % 256
+	return fmt.Sprintf("%d.%d.%d.0/24", a, b, c)
+}
+
+func sendAdvertiseUpdateMsg(conn net.Conn, i int) {
+	var prefix IPv4Prefix
+	prefix.FromString(prefixStr(i))
+	var origin OriginAttr
+	origin = OriginAttrEgp
+	var asPath ASPathAttr
+	var nextHop NextHopAttr
+	nextHop.FromString("192.168.56.1")
+	var localPref LocalPrefAttr
 	update := UpdateMsg{
 		Withdraws:      []NLRI{},
+		Attributes:     []Attr{&origin, &asPath, &nextHop, &localPref},
+		Advertisements: []NLRI{&prefix},
+	}
+	buf := update.Encode()
+	conn.Write(buf.Bytes())
+}
+
+func sendWithdrawUpdateMsg(conn net.Conn, i int) {
+	var prefix IPv4Prefix
+	prefix.FromString(prefixStr(i))
+	update := UpdateMsg{
+		Withdraws:      []NLRI{&prefix},
 		Attributes:     []Attr{},
 		Advertisements: []NLRI{},
 	}
@@ -67,7 +95,17 @@ func main() {
 
 	sendKeepAliveMsg(conn)
 
+	nrPrefixes := 500000
+
 	for {
+		for i := 0; i < nrPrefixes; i++ {
+			fmt.Printf("[A:%d] ", i)
+			sendAdvertiseUpdateMsg(conn, i)
+		}
+		for i := 0; i < nrPrefixes; i++ {
+			fmt.Printf("[W:%d] ", i)
+			sendWithdrawUpdateMsg(conn, i)
+		}
 	}
 
 	/*

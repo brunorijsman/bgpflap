@@ -40,6 +40,11 @@ func (m *MsgBuffer) SkipWord() int {
 	return pos
 }
 
+// Pos returns the current position in the buffer
+func (m *MsgBuffer) Pos() int {
+	return m.buffer.Len()
+}
+
 // AppendDoubleWord appends a double word
 func (m *MsgBuffer) AppendDoubleWord(dw uint32) {
 	m.buffer.WriteByte(byte((dw >> 24) & 0xff))

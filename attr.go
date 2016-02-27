@@ -41,10 +41,11 @@ const (
 )
 
 // Encode encodes an origin attribute
-func (a *OriginAttr) Encode(buf *MsgBuffer) {
+func (attr *OriginAttr) Encode(buf *MsgBuffer) {
 	buf.AppendByte(attrFlagTransitive)
 	buf.AppendByte(attrTypeOrigin)
-	buf.AppendByte(uint8(*a))
+	buf.AppendByte(1) // Attribute data length
+	buf.AppendByte(uint8(*attr))
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -53,12 +54,25 @@ func (a *OriginAttr) Encode(buf *MsgBuffer) {
 
 // ASPathAttr contains a decoded as-path
 type ASPathAttr struct {
-	ASPath ASPath // TODO: Maybe not a good idea: same name for var and type
+	ASPath
 }
 
 // Encode encodes an as-path attribute
-func (p *ASPathAttr) Encode(buf *MsgBuffer) {
-	p.ASPath.Encode(buf)
+func (attr *ASPathAttr) Encode(buf *MsgBuffer) {
+	len := attr.ASPath.EncodedLen()
+	flags := attrFlagTransitive
+	if len > 255 {
+		flags |= attrFlagExtendedLen
+	}
+	buf.AppendByte(uint8(flags))
+	buf.AppendByte(attrTypeAsPath)
+	if len > 255 {
+		// TODO: Stil need to check for overflow - doesn't fit in 16 bits
+		buf.AppendWord(uint16(len))
+	} else {
+		buf.AppendByte(uint8(len))
+	}
+	attr.ASPath.Encode(buf)
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -66,13 +80,16 @@ func (p *ASPathAttr) Encode(buf *MsgBuffer) {
 //----------------------------------------------------------------------------------------------------------------------
 
 // NextHopAttr contains a decoded next-hop attribute
-type NextHopAttr IPv4Address
+type NextHopAttr struct {
+	IPv4Address
+}
 
 // Encode encodes a next-hop attribute
-func (a *NextHopAttr) Encode(buf *MsgBuffer) {
+func (attr *NextHopAttr) Encode(buf *MsgBuffer) {
 	buf.AppendByte(attrFlagTransitive)
 	buf.AppendByte(attrTypeNextHop)
-	a.Encode(buf)
+	buf.AppendByte(4) // Attribute data length
+	attr.IPv4Address.Encode(buf)
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -83,10 +100,11 @@ func (a *NextHopAttr) Encode(buf *MsgBuffer) {
 type MEDAttr uint32
 
 // Encode encodes a MED attribute
-func (a *MEDAttr) Encode(buf *MsgBuffer) {
-	buf.AppendByte(attrFlagTransitive)
+func (attr *MEDAttr) Encode(buf *MsgBuffer) {
+	buf.AppendByte(attrFlagOptional)
 	buf.AppendByte(attrTypeMED)
-	buf.AppendDoubleWord(uint32(*a))
+	buf.AppendByte(4) // Attribute data length
+	buf.AppendDoubleWord(uint32(*attr))
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -97,10 +115,11 @@ func (a *MEDAttr) Encode(buf *MsgBuffer) {
 type LocalPrefAttr uint32
 
 // Encode encodes a local preference attribute
-func (a *LocalPrefAttr) Encode(buf *MsgBuffer) {
+func (attr *LocalPrefAttr) Encode(buf *MsgBuffer) {
 	buf.AppendByte(attrFlagTransitive)
-	buf.AppendByte(attrTypeMED)
-	buf.AppendDoubleWord(uint32(*a))
+	buf.AppendByte(attrTypeLocalPref)
+	buf.AppendByte(4) // Attribute data length
+	buf.AppendDoubleWord(uint32(*attr))
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -111,9 +130,10 @@ func (a *LocalPrefAttr) Encode(buf *MsgBuffer) {
 type AtomicAggregateAttr struct{}
 
 // Encode encodes an atomic aggregate attribute
-func (a *AtomicAggregateAttr) Encode(buf *MsgBuffer) {
+func (attr *AtomicAggregateAttr) Encode(buf *MsgBuffer) {
 	buf.AppendByte(attrFlagTransitive)
 	buf.AppendByte(attrTypeAtomicAggregate)
+	buf.AppendByte(0) // Attribute data length
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -121,11 +141,14 @@ func (a *AtomicAggregateAttr) Encode(buf *MsgBuffer) {
 //----------------------------------------------------------------------------------------------------------------------
 
 // AggregatorAttr contains a decoded aggregator attribute
-type AggregatorAttr IPv4Address
+type AggregatorAttr struct {
+	IPv4Address
+}
 
 // Encode encodes an aggregator attribute
-func (a *AggregatorAttr) Encode(buf *MsgBuffer) {
+func (attr *AggregatorAttr) Encode(buf *MsgBuffer) {
 	buf.AppendByte(attrFlagTransitive)
 	buf.AppendByte(attrTypeAggregator)
-	a.Encode(buf)
+	buf.AppendByte(4) // Attribute data length
+	attr.IPv4Address.Encode(buf)
 }

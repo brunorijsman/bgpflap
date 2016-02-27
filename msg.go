@@ -64,12 +64,38 @@ type UpdateMsg struct {
 }
 
 // Encode encodes an update message
-func (m *UpdateMsg) Encode() *MsgBuffer {
+func (msg *UpdateMsg) Encode() *MsgBuffer {
+
+	// Encode header
 	buf := NewMsgBuffer()
 	buf.AppendMarker()
 	totalLenPos := buf.SkipWord()
 	buf.AppendByte(bgpMessageTypeUpdate)
-	// @@@
+
+	// Encode withdraws
+	withdrawsLenPos := buf.SkipWord()
+	withdrawsPos := buf.Pos()
+	for _, nlri := range msg.Withdraws {
+		nlri.Encode(buf)
+	}
+	withdrawsLen := buf.Pos() - withdrawsPos
+	buf.InsertWord(uint16(withdrawsLen), withdrawsLenPos)
+
+	// Encode attributes
+	attributesLenPos := buf.SkipWord()
+	attributesPos := buf.Pos()
+	for _, attr := range msg.Attributes {
+		attr.Encode(buf)
+	}
+	attributesLen := buf.Pos() - attributesPos
+	buf.InsertWord(uint16(attributesLen), attributesLenPos)
+
+	// Encode advertisements
+	for _, nlri := range msg.Advertisements {
+		nlri.Encode(buf)
+	}
+
+	// Fixup total length
 	buf.InsertWord(uint16(buf.Len()), totalLenPos)
 	return buf
 }
