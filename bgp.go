@@ -43,6 +43,16 @@ func sendKeepAliveMsg(conn net.Conn) {
 	conn.Write(buf.Bytes())
 }
 
+func sendUpdateMsg(conn net.Conn) {
+	update := UpdateMsg{
+		Withdraws:      []NLRI{},
+		Attributes:     []Attr{},
+		Advertisements: []NLRI{},
+	}
+	buf := update.Encode()
+	conn.Write(buf.Bytes())
+}
+
 func main() {
 
 	conn, err := net.Dial("tcp", "192.168.56.2:179")

@@ -3,6 +3,7 @@ package main
 import "bytes"
 
 // A MsgBuffer contains an encoded BGP message
+// TODO: Make the type private...
 type MsgBuffer struct {
 	buffer *bytes.Buffer
 }
